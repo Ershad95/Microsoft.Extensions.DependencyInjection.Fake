@@ -1,32 +1,19 @@
-﻿using AutoFixture;
-using AutoFixture.AutoNSubstitute;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
+﻿using Microsoft.Extensions.DependencyInjection.Extensions;
+using ServiceCollector.Fake.Configuration;
 
-namespace ServiceCollector.Fake.Configuration;
+namespace Microsoft.Extensions.DependencyInjection.Fake;
 
 public static class ServiceCollectionExtension
 {
-    private static readonly IFixture AutoFixture;
-
-    static ServiceCollectionExtension()
-    {
-        AutoFixture = new Fixture()
-            .Customize(new AutoNSubstituteCustomization()
-            {
-                ConfigureMembers = true
-            });
-    }
-
     public static IServiceCollection Fake<TService>(
         this IServiceCollection serviceCollection,
-        Action<ServiceConfigExtension.FakeConfiguration<TService>>? action = null,
+        Action<FakeConfiguration<TService>>? action = null,
         string currentEnvironment = "Development",
         string targetEnvironment = "Development")
         where TService : class
     {
-        var obj = AutoFixture.Create<TService>();
-        var fakeConfiguration = new ServiceConfigExtension.FakeConfiguration<TService>(obj);
+        var obj = BaseGenerator.Create<TService>();
+        var fakeConfiguration = new FakeConfiguration<TService>(obj);
         action?.Invoke(fakeConfiguration);
 
         if (string.Equals(currentEnvironment, targetEnvironment, StringComparison.InvariantCultureIgnoreCase))
@@ -37,15 +24,14 @@ public static class ServiceCollectionExtension
 
         return serviceCollection;
     }
-
+    
     public static IServiceCollection FakeInMultiEnvironments<TService>(
         this IServiceCollection serviceCollection,
-        Action<ServiceConfigExtension.FakeConfigurationWithMultiEnvironment<TService>> action,
+        Action<FakeConfigurationWithMultiEnvironment<TService>> action,
         string currentEnvironment = "Development")
         where TService : class
     {
-        var fakeConfiguration =
-            new ServiceConfigExtension.FakeConfigurationWithMultiEnvironment<TService>(currentEnvironment);
+        var fakeConfiguration = new FakeConfigurationWithMultiEnvironment<TService>(currentEnvironment);
         action(fakeConfiguration);
 
         var service = fakeConfiguration.Services[currentEnvironment];
